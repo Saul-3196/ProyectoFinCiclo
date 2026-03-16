@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp"
+    android:background="#F8F9FA">
+
+    <ImageView
+        android:id="@+id/logoHome"
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        android:src="@drawable/logoapp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/tvEsloganHome"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="YOU'LL NEVER RIDE ALONE"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:layout_marginStart="16dp"
+        android:textColor="#333333"
+        app:layout_constraintBottom_toBottomOf="@+id/logoHome"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/logoHome"
+        app:layout_constraintTop_toTopOf="@+id/logoHome" />
+
+    <LinearLayout
+        android:id="@+id/layoutFiltro"
+        android:layout_width="120dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginTop="20dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/logoHome">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="📍 Localidad"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="#FF9800" />
+
+        <EditText
+            android:id="@+id/etFiltroLocalidad"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Ej: Oviedo"
+            android:textSize="13sp"
+            android:inputType="text"
+            android:background="@android:drawable/editbox_background_normal"
+            android:padding="8dp"
+            android:layout_marginTop="5dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Escribe para buscar..."
+            android:textSize="10sp"
+            android:layout_marginTop="4dp"
+            android:textColor="#666666" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/tvPanelTitulo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Panel de rutas"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:layout_marginStart="16dp"
+        app:layout_constraintStart_toEndOf="@+id/layoutFiltro"
+        app:layout_constraintTop_toTopOf="@+id/layoutFiltro" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvRutasTablon"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginStart="8dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/layoutFiltro"
+        app:layout_constraintTop_toBottomOf="@+id/tvPanelTitulo" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

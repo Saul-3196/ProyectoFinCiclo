@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/homeFragment">
+
+    <!--
+    Esta clase navigation va a ser el eje principal sobre el que trabaje
+    la aplicación, será el cerebro por así decirlo, creando un flujo de
+    trabajo entre las partes
+    -->
+
+    <fragment
+        android:id="@+id/loginFragment"
+        android:name="com.example.proyectofinciclo.ui.LoginFragment"
+        android:label="Login"
+        tools:layout="@layout/fragment_login">
+        <action
+            android:id="@+id/action_login_to_registro"
+            app:destination="@id/registroFragment" />
+        <action
+            android:id="@+id/action_login_to_home"
+            app:destination="@id/homeFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/registroFragment"
+        android:name="com.example.proyectofinciclo.ui.RegistroFragment"
+        android:label="Registro"
+        tools:layout="@layout/fragment_registro" />
+
+    <fragment
+        android:id="@+id/homeFragment"
+        android:name="com.example.proyectofinciclo.ui.HomeFragment"
+        android:label="Panel de Rutas"
+        tools:layout="@layout/fragment_home" >
+        <action
+            android:id="@+id/action_homeFragment_to_detalleRutaFragment"
+            app:destination="@id/detalleRutaFragment" />
+        <action
+            android:id="@+id/action_homeFragment_to_crearRutaFragment"
+            app:destination="@id/crearRutaFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/detalleRutaFragment"
+        android:name="com.example.proyectofinciclo.ui.DetalleRutaFragment"
+        android:label="Detalle de Ruta"
+        tools:layout="@layout/fragment_detalle_ruta" />
+
+    <fragment
+        android:id="@+id/crearRutaFragment"
+        android:name="com.example.proyectofinciclo.ui.CrearRutaFragment"
+        android:label="Nueva Ruta"
+        tools:layout="@layout/fragment_crear_ruta" />
+
+    <fragment
+        android:id="@+id/perfilFragment"
+        android:name="com.example.proyectofinciclo.ui.PerfilFragment"
+        android:label="Perfil"
+        tools:layout="@layout/fragment_perfil" />
+
+</navigation>

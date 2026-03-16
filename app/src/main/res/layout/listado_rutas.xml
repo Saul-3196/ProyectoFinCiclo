@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="12dp"
+    android:layout_marginVertical="6dp"
+    app:cardElevation="6dp"
+    app:cardCornerRadius="10dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:id="@+id/tvTituloItem"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_toStartOf="@id/btnEliminarRuta"
+                android:text="Oviedo-Pola Lena-Oviedo"
+                android:textColor="#212121"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <ImageButton
+                android:id="@+id/btnEliminarRuta"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@android:drawable/ic_menu_delete"
+                android:visibility="gone"
+                app:tint="#F44336"
+                android:contentDescription="Eliminar ruta" />
+        </RelativeLayout>
+
+        <TextView
+            android:id="@+id/tvNombreCreadorItem"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Por: Saúl Martínez"
+            android:textColor="#9E9E9E"
+            android:textSize="13sp"
+            android:layout_marginTop="2dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/tvLocalidadItem"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Oviedo, ES"
+                android:textColor="#757575"
+                android:textSize="15sp" />
+
+            <TextView
+                android:id="@+id/tvDificultadItem"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Dificultad: Alta"
+                android:textColor="#F44336"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tvTipoCiclismo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="🚴 Carretera"
+            android:textColor="#1976D2"
+            android:textSize="14sp"
+            android:textStyle="italic" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/tvDistanciaItem"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="📏 75.5 km"
+                android:textColor="#424242"
+                android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/tvDesnivelItem"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="20dp"
+                android:text="⛰️ 2000 m"
+                android:textColor="#424242"
+                android:textSize="14sp" />
+        </LinearLayout>
+
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>
