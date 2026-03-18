@@ -3,7 +3,6 @@ package com.example.proyectofinciclo.adapter
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
 import com.example.proyectofinciclo.R
 import com.example.proyectofinciclo.databinding.ListadoRutasBinding
@@ -13,13 +12,14 @@ class RutaAdapter(
     private var listaRutas: List<Ruta>,
     private val idRol: Int,
     private val idUsuarioActual: Int,
-    private val onClickListener: (Ruta) -> Unit
+    private val onClickListener: (Ruta) -> Unit,
+    private val onDeleteClick: (Ruta) -> Unit // Recibimos la función de borrado
 ) : RecyclerView.Adapter<RutaAdapter.RutaViewHolder>() {
 
     inner class RutaViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val binding = ListadoRutasBinding.bind(view)
 
-        fun render(ruta: Ruta, onClickListener: (Ruta) -> Unit) {
+        fun render(ruta: Ruta, onClickListener: (Ruta) -> Unit, onDeleteClick: (Ruta) -> Unit) {
             binding.tvTituloItem.text = ruta.titulo
             binding.tvLocalidadItem.text = ruta.localidad
             binding.tvDistanciaItem.text = "${ruta.distancia} km"
@@ -48,12 +48,11 @@ class RutaAdapter(
             binding.tvDificultadItem.setTextColor(colorDificultad)
 
             // Lógica para el botón eliminar (Admin o Dueño)
-            // idRol == 1 suele ser el Administrador
             if (idRol == 1 || ruta.id_creador == idUsuarioActual) {
                 binding.btnEliminarRuta.visibility = View.VISIBLE
                 binding.btnEliminarRuta.setOnClickListener {
-                    // Aquí el próximo día podemos añadir la llamada al PHP de borrar_ruta.php
-                    Toast.makeText(itemView.context, "Borrando: ${ruta.titulo}", Toast.LENGTH_SHORT).show()
+                    // LLAMADA A LA FUNCIÓN DE BORRADO REAL
+                    onDeleteClick(ruta)
                 }
             } else {
                 binding.btnEliminarRuta.visibility = View.GONE
@@ -69,7 +68,8 @@ class RutaAdapter(
     }
 
     override fun onBindViewHolder(holder: RutaViewHolder, position: Int) {
-        holder.render(listaRutas[position], onClickListener)
+        // Pasamos también onDeleteClick al render
+        holder.render(listaRutas[position], onClickListener, onDeleteClick)
     }
 
     override fun getItemCount(): Int = listaRutas.size

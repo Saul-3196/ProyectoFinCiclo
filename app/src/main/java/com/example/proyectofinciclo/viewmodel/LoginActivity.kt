@@ -50,14 +50,14 @@ class LoginActivity : AppCompatActivity() {
     private fun ejecutarLogin() {
         val email = binding.emailEditText.text.toString()
         val password = binding.passwordEditText.text.toString()
-        //Condiciones para el login exitoso
+
         if (email.isEmpty() || password.isEmpty()) {
             Toast.makeText(this, "Completa todos los campos", Toast.LENGTH_LONG).show()
             return
         }
-        //Configuración de la conexión
+
         val url = "http://192.168.56.1/cycling_together_api/login.php"
-        val conexion = Volley.newRequestQueue(this) //
+        val conexion = Volley.newRequestQueue(this)
 
         val peticionLogin = object : StringRequest(
             Request.Method.POST, url,
@@ -69,26 +69,27 @@ class LoginActivity : AppCompatActivity() {
                     val nombre = jsonRespuesta.getString("nombre")
 
                     Toast.makeText(this, "Bienvenido $nombre", Toast.LENGTH_LONG).show()
-
-                    // Guardamos el estado del check en el sharedPrefferences
+                    // Guardamos los datos en el SharedPreferences
                     val miSharedPrefs = getSharedPreferences(PREFS, MODE_PRIVATE)
                     val escritor = miSharedPrefs.edit()
-                    // Guardamos el id del usuario y el rol
-                    escritor.putInt(rol,idRol)
-                    escritor.putInt("id_usuario", idUsuario)
-                    escritor.putString("nombre_usuario", "$nombre")
-                    // Si está marcado el checkbox, guardamos el email
-                    if (binding.cbRecordar.isChecked) {
-                        escritor.putString(LLAVE_CORREO, email)
-                        escritor.putBoolean(LLAVE_CHECKBOX, true)
-                    } else {
-                        // Si no está marcado, borramos el email
-                        escritor.remove(LLAVE_CORREO)
-                        escritor.remove(LLAVE_CHECKBOX)
-                    }
-                    escritor.apply()
 
-                    // Ir al Main con Flags para limpiar sesión
+                    // Borramos el rastro previo de login
+                    escritor.clear()
+                    escritor.apply() // Aplicamos el borrado inmediatamente
+
+                    // Guardamos los datos nuevos
+                    val nuevoEscritor = miSharedPrefs.edit()
+                    nuevoEscritor.putInt("id_rol", idRol) // Usamos la llave directa "id_rol"
+                    nuevoEscritor.putInt("id_usuario", idUsuario)
+                    nuevoEscritor.putString("nombre_usuario", nombre)
+
+                    // Recordamos usuario si está chequeado
+                    if (binding.cbRecordar.isChecked) {
+                        nuevoEscritor.putString(LLAVE_CORREO, email)
+                        nuevoEscritor.putBoolean(LLAVE_CHECKBOX, true)
+                    }
+                    nuevoEscritor.apply()
+
                     val intent = Intent(this, MainActivity::class.java).apply {
                         putExtra("ID_USUARIO", idUsuario)
                         putExtra("ID_ROL", idRol)

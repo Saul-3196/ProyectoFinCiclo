@@ -6,6 +6,7 @@ import android.content.Context
 import android.os.Bundle
 import android.view.View
 import android.widget.ArrayAdapter
+import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
@@ -28,7 +29,6 @@ class CrearRutaFragment : Fragment(R.layout.fragment_crear_ruta), OnMapReadyCall
     private lateinit var binding: FragmentCrearRutaBinding
     private lateinit var googleMap: GoogleMap
 
-    // Listado de los diferentes tipos de bicicletas con su ID correspondiente
     private val opcionesBici = mapOf(
         "Carretera" to 1,
         "MTB" to 2,
@@ -40,12 +40,13 @@ class CrearRutaFragment : Fragment(R.layout.fragment_crear_ruta), OnMapReadyCall
         super.onViewCreated(view, savedInstanceState)
         binding = FragmentCrearRutaBinding.bind(view)
 
-        // Lógica del botón volver
+        // Controld del banner de la Activity principal
+        actualizarBannerActividad()
+
         binding.tvVolverCrear.setOnClickListener {
             findNavController().popBackStack()
         }
 
-        // Se inicializa el mapa
         val mapFragment = childFragmentManager.findFragmentById(R.id.map_fragment) as SupportMapFragment
         mapFragment.getMapAsync(this)
 
@@ -57,14 +58,25 @@ class CrearRutaFragment : Fragment(R.layout.fragment_crear_ruta), OnMapReadyCall
         }
     }
 
-    // Este método es obligatorio para implementar OnMapReadyCallback
+    // Controlador del banner de la Activity principal
+    private fun actualizarBannerActividad() {
+        val sharedPrefs = requireContext().getSharedPreferences("preferences", Context.MODE_PRIVATE)
+        val idRol = sharedPrefs.getInt("id_rol", 2)
+
+        // Buscamos el elemento en la Activity que contiene este Fragment
+        val tvBanner = activity?.findViewById<TextView>(R.id.tvModoAdmin)
+
+        if (idRol == 1) {
+            tvBanner?.visibility = View.VISIBLE
+        } else {
+            tvBanner?.visibility = View.GONE
+        }
+    }
+
     override fun onMapReady(map: GoogleMap) {
         googleMap = map
-        // Localidad por defecto
         val gijon = LatLng(43.5322, -5.6611)
         googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(gijon, 12f))
-
-        // Añadimos un marcador de prueba
         googleMap.addMarker(MarkerOptions().position(gijon).title("Punto de inicio"))
     }
 
@@ -106,7 +118,6 @@ class CrearRutaFragment : Fragment(R.layout.fragment_crear_ruta), OnMapReadyCall
         val puntoEncuentro = binding.etCrearPunto.text.toString().trim()
         val descripcion = binding.etCrearDescripcion.text.toString().trim()
 
-        // Validaciones de seguridad
         if (titulo.isEmpty()) { binding.etCrearTitulo.error = "Campo obligatorio"; return }
         if (localidad.isEmpty()) { binding.etCrearLocalidad.error = "Campo obligatorio"; return }
         if (distancia.isEmpty()) { binding.etCrearDistancia.error = "Indica los KM"; return }
@@ -117,7 +128,6 @@ class CrearRutaFragment : Fragment(R.layout.fragment_crear_ruta), OnMapReadyCall
         val prefs = requireContext().getSharedPreferences("preferences", Context.MODE_PRIVATE)
         val idUsuarioLogueado = prefs.getInt("id_usuario", 0)
 
-        // Nos conectamos a nuestro servidor para publicar la ruta
         val url = "http://192.168.56.1/cycling_together_api/guardar_ruta.php"
 
         val peticion = object : StringRequest(Method.POST, url,
@@ -150,6 +160,8 @@ class CrearRutaFragment : Fragment(R.layout.fragment_crear_ruta), OnMapReadyCall
                 params["punto_encuentro"] = puntoEncuentro
                 params["descripcion"] = descripcion
                 params["id_creador"] = idUsuarioLogueado.toString()
+                params["latitud"] = googleMap.cameraPosition.target.latitude.toString()
+                params["longitud"] = googleMap.cameraPosition.target.longitude.toString()
                 return params
             }
         }

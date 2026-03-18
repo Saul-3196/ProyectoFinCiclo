@@ -15,5 +15,7 @@ data class Ruta(
     val puntoEncuentro: String = "",
     val descripcion: String = "",
     val mapa_trazado: String? = null,
-    val nombre_creador: String? = null
+    val nombre_creador: String? = null,
+    val latitud: Double = 0.0,
+    val longitud: Double = 0.0
 )

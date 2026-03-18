@@ -3,6 +3,7 @@ package com.example.proyectofinciclo.ui
 import android.content.Context
 import android.os.Bundle
 import android.view.View
+import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
@@ -19,12 +20,15 @@ class DetalleRutaFragment : Fragment(R.layout.fragment_detalle_ruta) {
         super.onViewCreated(view, savedInstanceState)
         binding = FragmentDetalleRutaBinding.bind(view)
 
+        // Controlador del banner de la Activity principal
+        actualizarBannerActividad()
+
         // Lógica del botón volver
         binding.tvVolverDetalle.setOnClickListener {
             findNavController().popBackStack()
         }
 
-        // Recuperamos los datos
+        // Recuperamos los datos de los argumentos
         val titulo = arguments?.getString("titulo") ?: ""
         val distancia = arguments?.getDouble("distancia") ?: 0.0
         val dificultad = arguments?.getString("dificultad") ?: ""
@@ -38,7 +42,7 @@ class DetalleRutaFragment : Fragment(R.layout.fragment_detalle_ruta) {
         val idCreadorRuta = arguments?.getInt("id_creador") ?: 0
         val nombreOrganizador = arguments?.getString("creador") ?: "Usuario Desconocido"
 
-        //  Recuperamos el ID real del usuario logueado desde SharedPreferences
+        // Recuperamos el ID real del usuario logueado desde SharedPreferences
         val sharedPrefs = requireContext().getSharedPreferences("preferences", Context.MODE_PRIVATE)
         val idUsuarioLogueado = sharedPrefs.getInt("id_usuario", 0)
 
@@ -50,6 +54,7 @@ class DetalleRutaFragment : Fragment(R.layout.fragment_detalle_ruta) {
             4 -> "E-Bike"
             else -> "Desconocido"
         }
+
         // Verificamos si la ruta está vigente
         val esVigente = comprobarFecha(fechaString)
 
@@ -71,7 +76,7 @@ class DetalleRutaFragment : Fragment(R.layout.fragment_detalle_ruta) {
                     text = "Unirse a esta ruta"
                     setBackgroundColor(android.graphics.Color.parseColor("#FF9800"))
                     setOnClickListener {
-                        // Aquí el miércoles haremos el INSERT en la tabla 'inscripciones'
+                        // Simulación de inscripción (Se implementará en la Fase 6)
                         text = "¡Te has unido!"
                         setBackgroundColor(android.graphics.Color.parseColor("#4CAF50"))
                         isEnabled = false
@@ -97,16 +102,34 @@ class DetalleRutaFragment : Fragment(R.layout.fragment_detalle_ruta) {
         }
     }
 
+    // Controlador del banner de la Activity principal
+    private fun actualizarBannerActividad() {
+        val sharedPrefs = requireContext().getSharedPreferences("preferences", Context.MODE_PRIVATE)
+        val idRol = sharedPrefs.getInt("id_rol", 2)
+
+        // Buscamos el banner en la MainActivity
+        val tvBanner = activity?.findViewById<TextView>(R.id.tvModoAdmin)
+
+        if (idRol == 1) {
+            tvBanner?.visibility = View.VISIBLE
+        } else {
+            tvBanner?.visibility = View.GONE
+        }
+    }
+
     private fun comprobarFecha(fechaRuta: String): Boolean {
         return try {
             val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
             val dateRuta = sdf.parse(fechaRuta)
+
+            // Obtenemos la fecha de hoy sin horas (solo fecha)
             val hoy = Calendar.getInstance().apply {
                 set(Calendar.HOUR_OF_DAY, 0)
                 set(Calendar.MINUTE, 0)
                 set(Calendar.SECOND, 0)
                 set(Calendar.MILLISECOND, 0)
             }.time
+
             dateRuta != null && !dateRuta.before(hoy)
         } catch (e: Exception) {
             true
