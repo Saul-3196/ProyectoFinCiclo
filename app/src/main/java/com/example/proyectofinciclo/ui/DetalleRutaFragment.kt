@@ -9,21 +9,37 @@ import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import com.example.proyectofinciclo.R
 import com.example.proyectofinciclo.databinding.FragmentDetalleRutaBinding
+import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.OnMapReadyCallback
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MarkerOptions
 import java.text.SimpleDateFormat
 import java.util.*
 
-class DetalleRutaFragment : Fragment(R.layout.fragment_detalle_ruta) {
+class DetalleRutaFragment : Fragment(R.layout.fragment_detalle_ruta), OnMapReadyCallback {
 
     private lateinit var binding: FragmentDetalleRutaBinding
+    private var googleMap: GoogleMap? = null
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         binding = FragmentDetalleRutaBinding.bind(view)
 
-        // Controlador del banner de la Activity principal
+        // --- CAMBIO CLAVE: Usamos CustomSupportMapFragment ---
+        val mapFragment = childFragmentManager.findFragmentById(R.id.mapa_detalle) as CustomSupportMapFragment?
+
+        mapFragment?.setListener(object : CustomSupportMapFragment.OnTouchListener {
+            override fun onTouch() {
+                // Al tocar el mapa, bloqueamos el NestedScrollView
+                binding.root.requestDisallowInterceptTouchEvent(true)
+            }
+        })
+        mapFragment?.getMapAsync(this)
+        // ---------------------------------------------------
+
         actualizarBannerActividad()
 
-        // Lógica del botón volver
         binding.tvVolverDetalle.setOnClickListener {
             findNavController().popBackStack()
         }
@@ -42,11 +58,9 @@ class DetalleRutaFragment : Fragment(R.layout.fragment_detalle_ruta) {
         val idCreadorRuta = arguments?.getInt("id_creador") ?: 0
         val nombreOrganizador = arguments?.getString("creador") ?: "Usuario Desconocido"
 
-        // Recuperamos el ID real del usuario logueado desde SharedPreferences
         val sharedPrefs = requireContext().getSharedPreferences("preferences", Context.MODE_PRIVATE)
         val idUsuarioLogueado = sharedPrefs.getInt("id_usuario", 0)
 
-        // Traducimos el ID de bicicleta a texto
         val textoBici = when(idBici){
             1 -> "Carretera"
             2 -> "MTB"
@@ -55,10 +69,8 @@ class DetalleRutaFragment : Fragment(R.layout.fragment_detalle_ruta) {
             else -> "Desconocido"
         }
 
-        // Verificamos si la ruta está vigente
         val esVigente = comprobarFecha(fechaString)
 
-        // Lógica del botón Unirse
         binding.btnUnirseRuta.apply {
             when {
                 !esVigente -> {
@@ -76,7 +88,6 @@ class DetalleRutaFragment : Fragment(R.layout.fragment_detalle_ruta) {
                     text = "Unirse a esta ruta"
                     setBackgroundColor(android.graphics.Color.parseColor("#FF9800"))
                     setOnClickListener {
-                        // Simulación de inscripción (Se implementará en la Fase 6)
                         text = "¡Te has unido!"
                         setBackgroundColor(android.graphics.Color.parseColor("#4CAF50"))
                         isEnabled = false
@@ -86,12 +97,12 @@ class DetalleRutaFragment : Fragment(R.layout.fragment_detalle_ruta) {
             }
         }
 
-        // Rellenamos la UI
         binding.apply {
             tvDetalleTitulo.text = titulo
             tvDetalleKm.text = "📏 $distancia km"
             tvDetalleDesnivel.text = "⛰️ Desnivel: $desnivelRecibido m"
             tvDetalleDificultad.text = "📊 $dificultad"
+            asignarColorDificultad(tvDetalleDificultad, dificultad)
             tvDetalleLocalidad.text = "📍 $localidad"
             tvDetalleFecha.text = "📅 $fechaString"
             tvDetalleHora.text = "⏰ $hora"
@@ -102,14 +113,53 @@ class DetalleRutaFragment : Fragment(R.layout.fragment_detalle_ruta) {
         }
     }
 
-    // Controlador del banner de la Activity principal
+    private fun asignarColorDificultad(textView: TextView, dificultad: String) {
+        val color = when (dificultad.lowercase().trim()) {
+            "baja" -> android.graphics.Color.parseColor("#4CAF50")
+            "media" -> android.graphics.Color.parseColor("#FFEB3B")
+            "alta" -> android.graphics.Color.parseColor("#FF9800")
+            "muy alta" -> android.graphics.Color.parseColor("#F44336")
+            "extrema" -> android.graphics.Color.parseColor("#4A148C")
+            else -> android.graphics.Color.GRAY
+        }
+        textView.setTextColor(color)
+    }
+
+    override fun onMapReady(map: GoogleMap) {
+        googleMap = map
+
+        googleMap?.uiSettings?.apply {
+            isZoomControlsEnabled = true
+            isScrollGesturesEnabled = true
+            isMapToolbarEnabled = true
+        }
+
+        //  Recuperamos coordenadas y el punto de encuentro real
+        var lat = arguments?.getDouble("latitud") ?: 0.0
+        var lon = arguments?.getDouble("longitud") ?: 0.0
+        val tituloRuta = arguments?.getString("titulo") ?: "Ruta"
+        val puntoEncuentroReal = arguments?.getString("puntoEncuentro") ?: "Punto de encuentro"
+
+        //  Marcador y movimiento de cámara
+        val posicionRuta = LatLng(lat, lon)
+
+        googleMap?.clear() // Limpiamos marcadores previos para evitar duplicados
+
+        googleMap?.addMarker(
+            MarkerOptions()
+                .position(posicionRuta)
+                .title(puntoEncuentroReal) // Aquí saldrá "Oficina de Turismo de Luz"
+                .snippet(tituloRuta)       // Subtítulo con el nombre de la ruta
+        )
+
+        // Centramos el mapa
+        googleMap?.moveCamera(CameraUpdateFactory.newLatLngZoom(posicionRuta, 15f))
+    }
+
     private fun actualizarBannerActividad() {
         val sharedPrefs = requireContext().getSharedPreferences("preferences", Context.MODE_PRIVATE)
         val idRol = sharedPrefs.getInt("id_rol", 2)
-
-        // Buscamos el banner en la MainActivity
         val tvBanner = activity?.findViewById<TextView>(R.id.tvModoAdmin)
-
         if (idRol == 1) {
             tvBanner?.visibility = View.VISIBLE
         } else {
@@ -121,15 +171,12 @@ class DetalleRutaFragment : Fragment(R.layout.fragment_detalle_ruta) {
         return try {
             val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
             val dateRuta = sdf.parse(fechaRuta)
-
-            // Obtenemos la fecha de hoy sin horas (solo fecha)
             val hoy = Calendar.getInstance().apply {
                 set(Calendar.HOUR_OF_DAY, 0)
                 set(Calendar.MINUTE, 0)
                 set(Calendar.SECOND, 0)
                 set(Calendar.MILLISECOND, 0)
             }.time
-
             dateRuta != null && !dateRuta.before(hoy)
         } catch (e: Exception) {
             true

@@ -128,29 +128,15 @@
                     android:lineSpacingExtra="4dp"
                     android:textColor="#424242" />
 
-                <FrameLayout
-                    android:id="@+id/map_placeholder"
+                <fragment
+                    android:id="@+id/mapa_detalle"
+                    android:name="com.example.proyectofinciclo.ui.CustomSupportMapFragment"
                     android:layout_width="match_parent"
-                    android:layout_height="250dp"
+                    android:layout_height="200dp"
                     android:layout_marginTop="16dp"
-                    android:background="#E0E0E0">
-
-                    <ImageView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center"
-                        android:src="@android:drawable/ic_menu_mapmode"
-                        app:tint="#757575" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center"
-                        android:paddingTop="60dp"
-                        android:text="Mapa (Cargando trazado...)"
-                        android:textColor="#757575"
-                        android:textStyle="italic" />
-                </FrameLayout>
+                    app:uiZoomControls="true"
+                    app:uiScrollGestures="true">
+                </fragment>
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnUnirseRuta"

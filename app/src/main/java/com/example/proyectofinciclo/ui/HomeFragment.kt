@@ -149,7 +149,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     }
 
     private fun ejecutarBorradoEnServidor(idRuta: Int) {
-        val url = "http://192.168.56.1/cycling_together_api/borrar_ruta.php"
+        val url = "http://192.168.56.1/cycling_together_api/borrar_rutas.php"
 
         val request = object : StringRequest(Method.POST, url,
             { respuesta ->
@@ -190,6 +190,9 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             putString("mapa", ruta.mapa_trazado)
             putString("creador", ruta.nombre_creador)
             putBoolean("esMia", ruta.id_creador == idUsuarioLogueadoActual)
+            putDouble("longitud", ruta.longitud)
+            putDouble("latitud", ruta.latitud)
+            putString("mapa", ruta.mapa_trazado)
         }
         findNavController().navigate(R.id.detalleRutaFragment, bundle)
     }
