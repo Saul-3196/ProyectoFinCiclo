@@ -71,11 +71,11 @@ class LoginActivity : AppCompatActivity() {
                     Toast.makeText(this, "Bienvenido $nombre", Toast.LENGTH_LONG).show()
                     // Guardamos los datos en el SharedPreferences
                     val miSharedPrefs = getSharedPreferences(PREFS, MODE_PRIVATE)
-                    val escritor = miSharedPrefs.edit()
+                    //val escritor = miSharedPrefs.edit()
 
                     // Borramos el rastro previo de login
-                    escritor.clear()
-                    escritor.apply() // Aplicamos el borrado inmediatamente
+                    //escritor.clear()
+                    //escritor.apply() // Aplicamos el borrado inmediatamente
 
                     // Guardamos los datos nuevos
                     val nuevoEscritor = miSharedPrefs.edit()
@@ -87,6 +87,9 @@ class LoginActivity : AppCompatActivity() {
                     if (binding.cbRecordar.isChecked) {
                         nuevoEscritor.putString(LLAVE_CORREO, email)
                         nuevoEscritor.putBoolean(LLAVE_CHECKBOX, true)
+                    }else{
+                        nuevoEscritor.remove(LLAVE_CORREO)
+                        nuevoEscritor.remove(LLAVE_CHECKBOX)
                     }
                     nuevoEscritor.apply()
 

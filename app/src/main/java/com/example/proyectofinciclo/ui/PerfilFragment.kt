@@ -51,7 +51,9 @@ class PerfilFragment : Fragment(R.layout.fragment_perfil) {
         binding.btnLogOut.setOnClickListener {
             val sharedPrefs = requireContext().getSharedPreferences("preferences", Context.MODE_PRIVATE)
             val editor = sharedPrefs.edit()
-            editor.clear()
+            editor.remove("id_rol")
+            editor.remove("id_usuario")
+            editor.remove("nombre_usuario")
             editor.apply()
 
             Toast.makeText(requireContext(), "Hasta Pronto", Toast.LENGTH_SHORT).show()
