@@ -26,7 +26,7 @@ class DetalleRutaFragment : Fragment(R.layout.fragment_detalle_ruta), OnMapReady
         super.onViewCreated(view, savedInstanceState)
         binding = FragmentDetalleRutaBinding.bind(view)
 
-        // --- CAMBIO CLAVE: Usamos CustomSupportMapFragment ---
+        // Empleamos la clase de customización del mapa que hemos creado
         val mapFragment = childFragmentManager.findFragmentById(R.id.mapa_detalle) as CustomSupportMapFragment?
 
         mapFragment?.setListener(object : CustomSupportMapFragment.OnTouchListener {
@@ -36,8 +36,6 @@ class DetalleRutaFragment : Fragment(R.layout.fragment_detalle_ruta), OnMapReady
             }
         })
         mapFragment?.getMapAsync(this)
-        // ---------------------------------------------------
-
         actualizarBannerActividad()
 
         binding.tvVolverDetalle.setOnClickListener {
@@ -142,14 +140,12 @@ class DetalleRutaFragment : Fragment(R.layout.fragment_detalle_ruta), OnMapReady
 
         //  Marcador y movimiento de cámara
         val posicionRuta = LatLng(lat, lon)
-
-        googleMap?.clear() // Limpiamos marcadores previos para evitar duplicados
-
+        googleMap?.clear()
         googleMap?.addMarker(
             MarkerOptions()
                 .position(posicionRuta)
-                .title(puntoEncuentroReal) // Aquí saldrá "Oficina de Turismo de Luz"
-                .snippet(tituloRuta)       // Subtítulo con el nombre de la ruta
+                .title(puntoEncuentroReal)
+                .snippet(tituloRuta)
         )
 
         // Centramos el mapa

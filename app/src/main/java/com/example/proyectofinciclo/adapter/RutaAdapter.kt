@@ -13,7 +13,7 @@ class RutaAdapter(
     private val idRol: Int,
     private val idUsuarioActual: Int,
     private val onClickListener: (Ruta) -> Unit,
-    private val onDeleteClick: (Ruta) -> Unit // Recibimos la función de borrado
+    private val onDeleteClick: (Ruta) -> Unit
 ) : RecyclerView.Adapter<RutaAdapter.RutaViewHolder>() {
 
     inner class RutaViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -47,11 +47,11 @@ class RutaAdapter(
             }
             binding.tvDificultadItem.setTextColor(colorDificultad)
 
-            // Lógica para el botón eliminar (Admin o Dueño)
+            // Lógica para el botón eliminar ruta como administrador
             if (idRol == 1 || ruta.id_creador == idUsuarioActual) {
                 binding.btnEliminarRuta.visibility = View.VISIBLE
                 binding.btnEliminarRuta.setOnClickListener {
-                    // LLAMADA A LA FUNCIÓN DE BORRADO REAL
+                    // Función de borrado
                     onDeleteClick(ruta)
                 }
             } else {
