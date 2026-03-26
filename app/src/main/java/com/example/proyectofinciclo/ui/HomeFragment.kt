@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.View
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
@@ -33,33 +34,21 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         super.onViewCreated(view, savedInstanceState)
         binding = FragmentHomeBinding.bind(view)
 
-
-        // Configuración del RecyclerView
         binding.rvRutasTablon.layoutManager = LinearLayoutManager(requireContext())
         binding.rvRutasTablon.setHasFixedSize(true)
 
-        // Recupero el ID del usuario logueado y su rol
         val sharedPrefs = requireContext().getSharedPreferences("preferences", Context.MODE_PRIVATE)
-        idRolActual = sharedPrefs.getInt("id_rol", 2) // Por defecto usuario normal (2)
+        idRolActual = sharedPrefs.getInt("id_rol", 2)
         idUsuarioLogueadoActual = sharedPrefs.getInt("id_usuario", 0)
 
-        // Visibilidad del banner para el rol de ciclista
         actualizarInterfazSegunRol()
-
-        // Configuración de obtener rutas.
         setupBuscador()
         obtenerRutasDeServidor()
     }
 
     private fun actualizarInterfazSegunRol() {
-        // Buscamos el Text View del Banner en alguna de nuestras Activities
-        val tvBanner = activity?.findViewById<android.widget.TextView>(R.id.tvModoAdmin)
-
-        if (idRolActual == 1) {
-            tvBanner?.visibility = View.VISIBLE
-        } else {
-            tvBanner?.visibility = View.GONE
-        }
+        val tvBanner = activity?.findViewById<TextView>(R.id.tvModoAdmin)
+        tvBanner?.visibility = if (idRolActual == 1) View.VISIBLE else View.GONE
     }
 
     private fun setupBuscador() {
@@ -73,105 +62,41 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     }
 
     private fun filtrarRutas(texto: String) {
-        val listaFiltrada = if (texto.isEmpty()) {
-            listaOriginalRutas
-        } else {
-            listaOriginalRutas.filter { it.localidad.lowercase().contains(texto) }
-        }
-        if (::adapter.isInitialized) {
-            adapter.updateRutas(listaFiltrada)
-        }
+        val listaFiltrada = if (texto.isEmpty()) listaOriginalRutas else listaOriginalRutas.filter { it.localidad.lowercase().contains(texto) }
+        if (::adapter.isInitialized) adapter.updateRutas(listaFiltrada)
     }
 
     private fun obtenerRutasDeServidor() {
         val url = "http://192.168.56.1/cycling_together_api/listar_rutas.php"
-
-        val peticion = StringRequest(Request.Method.GET, url,
-            { respuesta ->
-                try {
-                    val jsonArray = JSONArray(respuesta)
-                    listaOriginalRutas.clear()
-
-                    for (i in 0 until jsonArray.length()) {
-                        val obj = jsonArray.getJSONObject(i)
-                        val ruta = Ruta(
-                            id_ruta = obj.getInt("id_ruta"),
-                            titulo = obj.getString("titulo"),
-                            distancia = obj.getDouble("distancia"),
-                            desnivel = obj.getInt("desnivel"),
-                            dificultad = obj.getString("dificultad"),
-                            localidad = obj.getString("localidad"),
-                            id_bici = obj.getInt("id_bici"),
-                            fecha = obj.getString("fecha"),
-                            hora = obj.getString("hora"),
-                            puntoEncuentro = obj.getString("punto_encuentro"),
-                            descripcion = obj.getString("descripcion"),
-                            id_creador = obj.getInt("id_creador"),
-                            nombre_creador = obj.optString("nombre_creador", "Usuario"),
-                            mapa_trazado = obj.optString("mapa_trazado", null),
-                            latitud = obj.optDouble("latitud", 0.0),
-                            longitud = obj.optDouble("longitud", 0.0)
-                        )
-                        listaOriginalRutas.add(ruta)
-                    }
-
-                    // Creamos el adapter pasando los 5 parámetros requeridos
-                    adapter = RutaAdapter(
-                        listaOriginalRutas,
-                        idRolActual,
-                        idUsuarioLogueadoActual,
-                        { ruta -> irADetalle(ruta) },
-                        { ruta -> mostrarDialogoBorrar(ruta) }
-                    )
-                    binding.rvRutasTablon.adapter = adapter
-
-                } catch (e: Exception) {
-                    e.printStackTrace()
+        Volley.newRequestQueue(requireContext()).add(StringRequest(Request.Method.GET, url, { respuesta ->
+            try {
+                val jsonArray = JSONArray(respuesta)
+                listaOriginalRutas.clear()
+                for (i in 0 until jsonArray.length()) {
+                    val obj = jsonArray.getJSONObject(i)
+                    listaOriginalRutas.add(Ruta(
+                        id_ruta = obj.getInt("id_ruta"),
+                        titulo = obj.getString("titulo"),
+                        distancia = obj.getDouble("distancia"),
+                        desnivel = obj.getInt("desnivel"),
+                        dificultad = obj.getString("dificultad"),
+                        localidad = obj.getString("localidad"),
+                        id_bici = obj.getInt("id_bici"),
+                        fecha = obj.getString("fecha"),
+                        hora = obj.getString("hora"),
+                        puntoEncuentro = obj.getString("punto_encuentro"),
+                        descripcion = obj.getString("descripcion"),
+                        id_creador = obj.getInt("id_creador"),
+                        nombre_creador = obj.optString("nombre_creador", "Usuario"),
+                        mapa_trazado = obj.optString("mapa_trazado", ""),
+                        latitud = obj.optDouble("latitud", 0.0),
+                        longitud = obj.optDouble("longitud", 0.0)
+                    ))
                 }
-            },
-            { error ->
-                Toast.makeText(requireContext(), "Error al conectar con el servidor", Toast.LENGTH_SHORT).show()
-            }
-        )
-        Volley.newRequestQueue(requireContext()).add(peticion)
-    }
-
-    private fun mostrarDialogoBorrar(ruta: Ruta) {
-        AlertDialog.Builder(requireContext())
-            .setTitle("Eliminar Ruta")
-            .setMessage("¿Estás seguro de que quieres borrar '${ruta.titulo}' permanentemente?")
-            .setPositiveButton("Eliminar") { _, _ ->
-                // Usamos !! porque id_ruta en el modelo puede ser opcional
-                ejecutarBorradoEnServidor(ruta.id_ruta!!)
-            }
-            .setNegativeButton("Cancelar", null)
-            .show()
-    }
-
-    private fun ejecutarBorradoEnServidor(idRuta: Int) {
-        val url = "http://192.168.56.1/cycling_together_api/borrar_rutas.php"
-
-        val request = object : StringRequest(Method.POST, url,
-            { respuesta ->
-                try {
-                    val json = JSONObject(respuesta)
-                    if (json.getString("status") == "success") {
-                        Toast.makeText(context, "Ruta eliminada correctamente", Toast.LENGTH_SHORT).show()
-                        obtenerRutasDeServidor() // Recarga la lista automáticamente
-                    } else {
-                        Toast.makeText(context, "Error: ${json.getString("message")}", Toast.LENGTH_SHORT).show()
-                    }
-                } catch (e: Exception) { e.printStackTrace() }
-            },
-            { Toast.makeText(context, "Error de conexión al borrar", Toast.LENGTH_SHORT).show() }
-        ) {
-            override fun getParams(): Map<String, String> {
-                val params = HashMap<String, String>()
-                params["id_ruta"] = idRuta.toString()
-                return params
-            }
-        }
-        Volley.newRequestQueue(requireContext()).add(request)
+                adapter = RutaAdapter(listaOriginalRutas, idRolActual, idUsuarioLogueadoActual, { irADetalle(it) }, { mostrarDialogoBorrar(it) })
+                binding.rvRutasTablon.adapter = adapter
+            } catch (e: Exception) { e.printStackTrace() }
+        }, { Toast.makeText(requireContext(), "Error de red", Toast.LENGTH_SHORT).show() }))
     }
 
     private fun irADetalle(ruta: Ruta) {
@@ -187,13 +112,23 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             putString("descripción", ruta.descripcion)
             putInt("id_bici", ruta.id_bici)
             putInt("id_creador", ruta.id_creador)
-            putString("mapa", ruta.mapa_trazado)
             putString("creador", ruta.nombre_creador)
-            putBoolean("esMia", ruta.id_creador == idUsuarioLogueadoActual)
-            putDouble("longitud", ruta.longitud)
             putDouble("latitud", ruta.latitud)
-            putString("mapa", ruta.mapa_trazado)
+            putDouble("longitud", ruta.longitud)
+            putString("mapa", ruta.mapa_trazado) // CLAVE CORRECTA
         }
         findNavController().navigate(R.id.detalleRutaFragment, bundle)
+    }
+
+    private fun mostrarDialogoBorrar(ruta: Ruta) {
+        AlertDialog.Builder(requireContext()).setTitle("Eliminar").setMessage("¿Borrar ruta?")
+            .setPositiveButton("Sí") { _, _ -> ejecutarBorrado(ruta.id_ruta!!) }.setNegativeButton("No", null).show()
+    }
+
+    private fun ejecutarBorrado(id: Int) {
+        val url = "http://192.168.56.1/cycling_together_api/borrar_rutas.php"
+        Volley.newRequestQueue(requireContext()).add(object : StringRequest(Method.POST, url, { obtenerRutasDeServidor() }, {}) {
+            override fun getParams() = mapOf("id_ruta" to id.toString())
+        })
     }
 }
