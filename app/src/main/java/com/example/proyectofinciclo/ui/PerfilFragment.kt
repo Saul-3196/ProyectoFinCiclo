@@ -12,27 +12,34 @@ import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.android.volley.Request
+import com.android.volley.toolbox.StringRequest
+import com.android.volley.toolbox.Volley
 import com.example.proyectofinciclo.R
 import com.example.proyectofinciclo.adapter.RutaAdapter
 import com.example.proyectofinciclo.databinding.FragmentPerfilBinding
 import com.example.proyectofinciclo.model.Ruta
+import org.json.JSONArray
+import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.*
 
 class PerfilFragment : Fragment(R.layout.fragment_perfil) {
 
     private lateinit var binding: FragmentPerfilBinding
-    private lateinit var adapter: RutaAdapter
+    private var adapter: RutaAdapter? = null
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         binding = FragmentPerfilBinding.bind(view)
 
-        // Controlador del banner de la Activity principal
         actualizarBannerActividad()
-
         configurarDesplegables()
         setupRecyclerView()
+
+        // Se cargan los datos del usuario, si hay cambios, el onResume() los actualizará
+        cargarDatosPerfil()
+        cargarMisRutas()
 
         binding.etFechaNacimiento.setOnClickListener {
             val calendar = Calendar.getInstance()
@@ -45,7 +52,60 @@ class PerfilFragment : Fragment(R.layout.fragment_perfil) {
         }
 
         binding.btnGuardarPerfil.setOnClickListener {
-            Toast.makeText(requireContext(), "Perfil actualizado", Toast.LENGTH_SHORT).show()
+            val nombre = binding.etNombrePerfil.text.toString().trim()
+            val email = binding.etEmailPerfil.text.toString().trim()
+            val sexo = binding.spinnerSexo.text.toString()
+            val fechaNacimiento = binding.etFechaNacimiento.text.toString()
+            val ciudad = binding.etCiudad.text.toString().trim()
+            val nivelUsuario = binding.spinnerNivel.text.toString()
+            val tipoBiciTexto = binding.spinnerTipoBici.text.toString()
+
+            val idBici = when (tipoBiciTexto) {
+                "Carretera" -> 1
+                "MTB", "Montaña" -> 2
+                "Gravel" -> 3
+                "E-Bike", "Ebike" -> 4
+                else -> 0
+            }
+
+            val sharedPrefs = requireContext().getSharedPreferences("preferences", Context.MODE_PRIVATE)
+            val idUsuario = sharedPrefs.getInt("id_usuario", 0)
+
+            val url = "http://192.168.56.1/cycling_together_api/editar_perfil.php"
+
+            val request = object : StringRequest(Method.POST, url, { response ->
+                try {
+                    val jsonObject = JSONObject(response)
+                    if (jsonObject.getString("status") == "success") {
+                        Toast.makeText(requireContext(), "Perfil actualizado correctamente", Toast.LENGTH_SHORT).show()
+
+                        val editor = sharedPrefs.edit()
+                        editor.putString("nombre_usuario", nombre)
+                        editor.apply()
+
+                    } else {
+                        Toast.makeText(requireContext(), "Error al guardar: ${jsonObject.getString("message")}", Toast.LENGTH_LONG).show()
+                    }
+                } catch (e: Exception) {
+                    Toast.makeText(requireContext(), "Error procesando respuesta", Toast.LENGTH_SHORT).show()
+                }
+            }, {
+                Toast.makeText(requireContext(), "Error de conexión", Toast.LENGTH_SHORT).show()
+            }) {
+                override fun getParams(): Map<String, String> {
+                    return mapOf(
+                        "id_usuario" to idUsuario.toString(),
+                        "nombre" to nombre,
+                        "email" to email,
+                        "sexo" to sexo,
+                        "fecha_nacimiento" to fechaNacimiento,
+                        "ciudad" to ciudad,
+                        "nivel_usuario" to nivelUsuario,
+                        "id_bici" to idBici.toString()
+                    )
+                }
+            }
+            Volley.newRequestQueue(requireContext()).add(request)
         }
 
         binding.btnLogOut.setOnClickListener {
@@ -67,12 +127,125 @@ class PerfilFragment : Fragment(R.layout.fragment_perfil) {
         }
     }
 
-    // Controlador del banner de la Activity principal
+    // Refrescamos la interfaz tras haber ejecutado algún cambio
+    override fun onResume() {
+        super.onResume()
+        // Cada vez que se acceda a la ventana del perfil, se refrescarán los datos
+        cargarDatosPerfil()
+        cargarMisRutas()
+    }
+
+    private fun cargarDatosPerfil() {
+        val sharedPrefs = requireContext().getSharedPreferences("preferences", Context.MODE_PRIVATE)
+        val idUsuario = sharedPrefs.getInt("id_usuario", 0)
+
+        val url = "http://192.168.56.1/cycling_together_api/obtener_perfil.php"
+
+        val request = object : StringRequest(Method.POST, url, { response ->
+            try {
+                val userJson = JSONObject(response)
+
+                binding.etNombrePerfil.setText(userJson.optString("nombre"))
+                binding.etEmailPerfil.setText(userJson.optString("email"))
+                binding.etCiudad.setText(userJson.optString("ciudad"))
+
+                val fecha = userJson.optString("fecha_nacimiento")
+                if(fecha != "null" && fecha.isNotEmpty()) {
+                    binding.etFechaNacimiento.setText(fecha)
+                }
+
+                val sexo = userJson.optString("sexo")
+                if(sexo != "null" && sexo.isNotEmpty()) {
+                    binding.spinnerSexo.setText(sexo, false)
+                }
+
+                val nivel = userJson.optString("nivel_usuario")
+                if(nivel != "null") binding.spinnerNivel.setText(nivel, false)
+
+                val idBici = userJson.optInt("id_bici", 0)
+                val textoBici = when(idBici) {
+                    1 -> "Carretera"
+                    2 -> "MTB"
+                    3 -> "Gravel"
+                    4 -> "E-Bike"
+                    else -> ""
+                }
+                if(textoBici.isNotEmpty()) binding.spinnerTipoBici.setText(textoBici, false)
+
+            } catch (e: Exception) {
+
+            }
+        }, {
+            Toast.makeText(requireContext(), "Error de red al cargar perfil", Toast.LENGTH_SHORT).show()
+        }) {
+            override fun getParams(): Map<String, String> {
+                return mapOf("id_usuario" to idUsuario.toString())
+            }
+        }
+        Volley.newRequestQueue(requireContext()).add(request)
+    }
+
+    private fun cargarMisRutas() {
+        val sharedPrefs = requireContext().getSharedPreferences("preferences", Context.MODE_PRIVATE)
+        val idLogueado = sharedPrefs.getInt("id_usuario", 0)
+        val rolLogueado = sharedPrefs.getInt("id_rol", 2)
+
+        val url = "http://192.168.56.1/cycling_together_api/obtener_mis_rutas.php"
+
+        val request = object : StringRequest(Method.POST, url, { response ->
+            try {
+                val jsonArray = JSONArray(response)
+                val listaRutasReales = mutableListOf<Ruta>()
+
+                for (i in 0 until jsonArray.length()) {
+                    val jsonObject = jsonArray.getJSONObject(i)
+
+                    val ruta = Ruta(
+                        id_ruta = jsonObject.getInt("id_ruta"),
+                        titulo = jsonObject.getString("titulo"),
+                        distancia = jsonObject.getDouble("distancia"),
+                        desnivel = jsonObject.getInt("desnivel"),
+                        dificultad = jsonObject.getString("dificultad"),
+                        localidad = jsonObject.getString("localidad"),
+                        id_bici = jsonObject.getInt("id_bici"),
+                        fecha = jsonObject.getString("fecha"),
+                        hora = jsonObject.getString("hora"),
+                        puntoEncuentro = jsonObject.getString("punto_encuentro"),
+                        descripcion = jsonObject.getString("descripcion"),
+                        id_creador = jsonObject.getInt("id_creador"),
+                        mapa_trazado = jsonObject.optString("mapa_trazado", null)
+                    )
+                    listaRutasReales.add(ruta)
+                }
+
+                adapter = RutaAdapter(
+                    listaRutasReales,
+                    rolLogueado,
+                    idLogueado,
+                    { ruta -> irADetalle(ruta) },
+                    { ruta -> mostrarDialogoBorrar(ruta) }
+                )
+                binding.rvMisRutas.adapter = adapter
+
+            } catch (e: Exception) {
+               // Si el usuario no tiene rutas, mostramos un listado vacío
+                binding.rvMisRutas.adapter = null
+            }
+        }, {
+            Toast.makeText(requireContext(), "Error al cargar tu historial", Toast.LENGTH_SHORT).show()
+        }) {
+            override fun getParams(): Map<String, String> {
+                return mapOf("id_usuario" to idLogueado.toString())
+            }
+        }
+
+        Volley.newRequestQueue(requireContext()).add(request)
+    }
+
     private fun actualizarBannerActividad() {
         val sharedPrefs = requireContext().getSharedPreferences("preferences", Context.MODE_PRIVATE)
         val idRol = sharedPrefs.getInt("id_rol", 2)
 
-        // Accedemos al TextView de la MainActivity
         val tvBanner = activity?.findViewById<TextView>(R.id.tvModoAdmin)
 
         if (idRol == 1) {
@@ -83,54 +256,8 @@ class PerfilFragment : Fragment(R.layout.fragment_perfil) {
     }
 
     private fun setupRecyclerView() {
-        val sharedPrefs = requireContext().getSharedPreferences("preferences", Context.MODE_PRIVATE)
-        val idLogueado = sharedPrefs.getInt("id_usuario", 0)
-        val rolLogueado = sharedPrefs.getInt("id_rol", 2)
-
-        val misRutas = listOf(
-            Ruta(
-                id_ruta = 1,
-                titulo = "Clásica Somiedo 2026",
-                distancia = 145.0,
-                desnivel = 3400,
-                dificultad = "Extrema",
-                localidad = "Pola de Somiedo",
-                id_bici = 1,
-                fecha = "15/05/2026",
-                hora = "09:00",
-                puntoEncuentro = "Plaza del Ayuntamiento",
-                descripcion = "Ruta de alta montaña con tres puertos de primera categoría.",
-                id_creador = idLogueado,
-                mapa_trazado = null
-            ),
-            Ruta(
-                id_ruta = 2,
-                titulo = "Ruta Playas de Gijón",
-                distancia = 20.0,
-                desnivel = 20,
-                dificultad = "Baja",
-                localidad = "Gijón",
-                id_bici = 1,
-                fecha = "10/01/2023",
-                hora = "10:00",
-                puntoEncuentro = "Puerto Deportivo",
-                descripcion = "Paseo costero tranquilo por la zona del muro.",
-                id_creador = idLogueado,
-                mapa_trazado = null
-            )
-        )
-
-        adapter = RutaAdapter(
-            misRutas,
-            rolLogueado,
-            idLogueado,
-            { ruta -> irADetalle(ruta) },
-            { ruta -> mostrarDialogoBorrar(ruta) }
-        )
-
         binding.rvMisRutas.apply {
             layoutManager = LinearLayoutManager(requireContext())
-            adapter = this@PerfilFragment.adapter
         }
     }
 
@@ -155,18 +282,45 @@ class PerfilFragment : Fragment(R.layout.fragment_perfil) {
 
     private fun mostrarDialogoBorrar(ruta: Ruta) {
         AlertDialog.Builder(requireContext())
-            .setTitle("Eliminar mi ruta")
-            .setMessage("¿Deseas eliminar '${ruta.titulo}'?")
-            .setPositiveButton("Eliminar") { _, _ ->
-                Toast.makeText(requireContext(), "Funcionalidad de borrado lista", Toast.LENGTH_SHORT).show()
+            .setTitle("Eliminar ruta")
+            .setMessage("¿Estás seguro de que deseas eliminar la ruta '${ruta.titulo}'? Esta acción no se puede deshacer.")
+            .setPositiveButton("Sí, eliminar") { _, _ ->
+                eliminarRutaDeBaseDatos(ruta.id_ruta!!)
             }
-            .setNegativeButton("Cancelar", null)
+            .setNegativeButton("Cancelar borrado", null)
             .show()
     }
 
+    private fun eliminarRutaDeBaseDatos(idRuta: Int) {
+        val url = "http://192.168.56.1/cycling_together_api/borrar_rutas.php"
+
+        val request = object : StringRequest(Method.POST, url, { response ->
+            try {
+                val jsonObject = JSONObject(response)
+                if (jsonObject.getString("status") == "success") {
+                    Toast.makeText(requireContext(), "Ruta eliminada correctamente", Toast.LENGTH_SHORT).show()
+                    cargarMisRutas() // Recarga inmediata en el perfil
+                } else {
+                    Toast.makeText(requireContext(), "Error al eliminar la ruta", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                // Por si el servidor responde con un warning de PHP en vez de JSON
+                cargarMisRutas()
+            }
+        }, {
+            Toast.makeText(requireContext(), "Error de red", Toast.LENGTH_SHORT).show()
+        }) {
+            override fun getParams(): Map<String, String> {
+                return mapOf("id_ruta" to idRuta.toString())
+            }
+        }
+
+        Volley.newRequestQueue(requireContext()).add(request)
+    }
+    // Comprobamos la vigencia de las rutas para mostrarlas o no.
     private fun comprobarFecha(fechaRuta: String): Boolean {
         return try {
-            val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+            val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
             val date = sdf.parse(fechaRuta)
             date?.after(Date()) ?: false
         } catch (e: Exception) {

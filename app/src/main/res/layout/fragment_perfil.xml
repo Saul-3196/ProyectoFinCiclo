@@ -31,10 +31,10 @@
                 android:layout_centerHorizontal="true"
                 android:padding="2dp"
                 android:scaleType="centerCrop"
-                android:src="@drawable/saul"
+                android:src="@drawable/avatar_perfil"
                 app:shapeAppearanceOverlay="@style/CircleImage"
                 app:strokeColor="#FF9800"
-                app:strokeWidth="3dp" />
+                app:strokeWidth="2dp" />
         </RelativeLayout>
 
         <com.google.android.material.card.MaterialCardView

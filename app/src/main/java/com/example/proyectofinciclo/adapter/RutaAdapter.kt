@@ -19,6 +19,7 @@ class RutaAdapter(
     inner class RutaViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val binding = ListadoRutasBinding.bind(view)
 
+
         fun render(ruta: Ruta, onClickListener: (Ruta) -> Unit, onDeleteClick: (Ruta) -> Unit) {
             binding.tvTituloItem.text = ruta.titulo
             binding.tvLocalidadItem.text = ruta.localidad
@@ -26,6 +27,8 @@ class RutaAdapter(
             binding.tvDificultadItem.text = "Dificultad: ${ruta.dificultad}"
             binding.tvDesnivelItem.text = "⛰️ ${ruta.desnivel} m"
             binding.tvNombreCreadorItem.text = "Por: ${ruta.nombre_creador ?: "Usuario"}"
+            binding.tvParticipantesItem.text = "👥 ${ruta.num_participantes}"
+
 
             val tipoCiclismo = when(ruta.id_bici){
                 1-> "Carretera"
@@ -38,9 +41,9 @@ class RutaAdapter(
 
             // Lógica de colores para la dificultad
             val colorDificultad = when (ruta.dificultad.lowercase().trim()) {
-                "baja" -> android.graphics.Color.parseColor("#4DF527")
+                "baja" -> android.graphics.Color.parseColor("#4CAF50")
                 "media" -> android.graphics.Color.parseColor("#FFC107")
-                "alta" -> android.graphics.Color.parseColor("#F58727")
+                "alta" -> android.graphics.Color.parseColor("#F54040")
                 "muy alta" -> android.graphics.Color.parseColor("#961208")
                 "extrema" -> android.graphics.Color.parseColor("#490669")
                 else -> android.graphics.Color.GRAY

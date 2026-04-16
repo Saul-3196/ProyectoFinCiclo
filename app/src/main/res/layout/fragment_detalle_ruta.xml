@@ -109,7 +109,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
                     android:textStyle="italic"
-                    android:text="🏁 Punto encuentro: --" />
+                    android:text="🫂 Punto encuentro:" />
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -127,6 +127,18 @@
                     android:textSize="16sp"
                     android:lineSpacingExtra="4dp"
                     android:textColor="#424242" />
+
+                <TextView
+                    android:id="@+id/tvListaParticipantes"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:padding="12dp"
+                    android:background="#E3F2FD"
+                    android:text="👥 Sé el primero en unirte"
+                    android:textColor="#1976D2"
+                    android:textSize="15sp"
+                    android:textStyle="bold|italic" />
 
                 <fragment
                     android:id="@+id/mapa_detalle"

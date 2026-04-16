@@ -9,6 +9,9 @@ import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
+import com.android.volley.Request
+import com.android.volley.toolbox.StringRequest
+import com.android.volley.toolbox.Volley
 import com.example.proyectofinciclo.R
 import com.example.proyectofinciclo.databinding.FragmentDetalleRutaBinding
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -25,6 +28,11 @@ class DetalleRutaFragment : Fragment(R.layout.fragment_detalle_ruta), OnMapReady
     private var googleMap: GoogleMap? = null
     private val TAMANO_ICONO = 80
 
+    // Variables de estado para el botón
+    private var idRutaActual: Int = 0
+    private var idUsuarioActual: Int = 0
+    private var usuarioEstaUnido: Boolean = false
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         binding = FragmentDetalleRutaBinding.bind(view)
@@ -38,7 +46,15 @@ class DetalleRutaFragment : Fragment(R.layout.fragment_detalle_ruta), OnMapReady
 
         binding.tvVolverDetalle.setOnClickListener { findNavController().popBackStack() }
 
-        // Recuperación de datos de argumentos
+        // Preferencias del usuario logueado
+        val sharedPrefs = requireContext().getSharedPreferences("preferences", Context.MODE_PRIVATE)
+        idUsuarioActual = sharedPrefs.getInt("id_usuario", 0)
+
+        // Recuperación de datos del Bundle
+        idRutaActual = arguments?.getInt("id_ruta") ?: 0
+        usuarioEstaUnido = arguments?.getBoolean("estaUnido") ?: false
+        val numParticipantes = arguments?.getInt("num_participantes") ?: 0
+        val nombresParticipantes = arguments?.getString("nombres_participantes") ?: ""
         val titulo = arguments?.getString("titulo") ?: ""
         val distancia = arguments?.getDouble("distancia") ?: 0.0
         val dificultad = arguments?.getString("dificultad") ?: ""
@@ -51,39 +67,131 @@ class DetalleRutaFragment : Fragment(R.layout.fragment_detalle_ruta), OnMapReady
         val idBici = arguments?.getInt("id_bici") ?: 0
         val idCreadorRuta = arguments?.getInt("id_creador") ?: 0
         val nombreOrganizador = arguments?.getString("creador") ?: "Usuario"
-
-
         val textoBici = when(idBici){ 1 -> "Carretera"; 2 -> "MTB"; 3 -> "Gravel"; 4 -> "E-Bike"; else -> "Bici" }
         val esVigente = comprobarFecha(fechaString)
 
-        binding.btnUnirseRuta.apply {
-            if (!esVigente) { isEnabled = false; text = "Ruta finalizada"; setBackgroundColor(Color.GRAY) }
-            else if (idCreadorRuta == requireContext().getSharedPreferences("preferences", Context.MODE_PRIVATE).getInt("id_usuario", 0)) {
-                isEnabled = false; text = "Eres el organizador"; setBackgroundColor(Color.parseColor("#2196F3"))
-            } else { setOnClickListener { text = "¡Te has unido a la ruta!"; isEnabled = false; setBackgroundColor(Color.parseColor("#4CAF50")) } }
+        binding.apply {
+            tvDetalleTitulo.text = titulo
+            tvDetalleKm.text = "📏 $distancia km"
+            tvDetalleDesnivel.text = "⛰️ $desnivelRecibido m"
+            tvDetalleDificultad.text = "📊 $dificultad"
+            asignarColorDificultad(tvDetalleDificultad, dificultad)
+            tvDetalleLocalidad.text = "📍 $localidad"
+            tvDetalleFecha.text = "📅 $fechaString"
+            tvDetalleHora.text = "⏰ $hora"
+            tvDetallePunto.text = "🫂 $puntoEncuentro"
+            tvDetalleDescripcion.text = descripcion
+            tvDetalleTipo.text = "🚴 $textoBici"
+            tvDetalleCreador.text = "Por: $nombreOrganizador"
+
+            if (numParticipantes > 0) {
+                tvListaParticipantes.text = "👥 Apuntados ($numParticipantes): $nombresParticipantes"
+            } else {
+                tvListaParticipantes.text = "👥 Todavía no hay nadie apuntado"
+            }
         }
 
-        binding.apply {
-            tvDetalleTitulo.text = titulo; tvDetalleKm.text = "📏 $distancia km"; tvDetalleDesnivel.text = "⛰️ $desnivelRecibido m"
-            tvDetalleDificultad.text = "📊 $dificultad"; asignarColorDificultad(tvDetalleDificultad, dificultad)
-            tvDetalleLocalidad.text = "📍 $localidad"; tvDetalleFecha.text = "📅 $fechaString"; tvDetalleHora.text = "⏰ $hora"
-            tvDetallePunto.text = "🏁 $puntoEncuentro"; tvDetalleDescripcion.text = descripcion; tvDetalleTipo.text = "🚴 $textoBici"
-            tvDetalleCreador.text = "Por: $nombreOrganizador"
+        // Lógica del botón de unirse o abandonar
+        configurarBotonUnirse(esVigente, idCreadorRuta)
+    }
+
+    private fun configurarBotonUnirse(esVigente: Boolean, idCreadorRuta: Int) {
+        val btn = binding.btnUnirseRuta
+
+        if (!esVigente) {
+            btn.isEnabled = false
+            btn.text = "Ruta finalizada"
+            btn.setBackgroundColor(Color.GRAY)
+        } else if (idCreadorRuta == idUsuarioActual) {
+            btn.isEnabled = false
+            btn.text = "Eres el organizador"
+            btn.setBackgroundColor(Color.parseColor("#2196F3"))
+        } else {
+            // El usuario puede interactuar
+            btn.isEnabled = true
+            actualizarAspectoBoton()
+
+            btn.setOnClickListener {
+                btn.isEnabled = false
+                if (usuarioEstaUnido) {
+                    peticionAbandonarRuta()
+                } else {
+                    peticionUnirseRuta()
+                }
+            }
         }
+    }
+
+    private fun actualizarAspectoBoton() {
+        if (usuarioEstaUnido) {
+            binding.btnUnirseRuta.text = "Abandonar ruta"
+            binding.btnUnirseRuta.setBackgroundColor(Color.parseColor("#F44336")) // Rojo
+        } else {
+            binding.btnUnirseRuta.text = "Unirse a esta ruta"
+            binding.btnUnirseRuta.setBackgroundColor(Color.parseColor("#4CAF50")) // Verde
+        }
+    }
+
+    private fun peticionUnirseRuta() {
+        val url = "http://192.168.56.1/cycling_together_api/unirse_ruta.php"
+        val request = object : StringRequest(Method.POST, url, { response ->
+            binding.btnUnirseRuta.isEnabled = true
+            if (response.trim() == "success") {
+                usuarioEstaUnido = true
+                actualizarAspectoBoton()
+                Toast.makeText(requireContext(), "¡Te has unido a la ruta!", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(requireContext(), "Error al unirse", Toast.LENGTH_SHORT).show()
+            }
+        }, {
+            binding.btnUnirseRuta.isEnabled = true
+            Toast.makeText(requireContext(), "Error de conexión", Toast.LENGTH_SHORT).show()
+        }) {
+            override fun getParams(): Map<String, String> {
+                return mapOf(
+                    "id_ruta" to idRutaActual.toString(),
+                    "id_usuario" to idUsuarioActual.toString()
+                )
+            }
+        }
+        Volley.newRequestQueue(requireContext()).add(request)
+    }
+
+    private fun peticionAbandonarRuta() {
+        val url = "http://192.168.56.1/cycling_together_api/abandonar_ruta.php"
+        val request = object : StringRequest(Method.POST, url, { response ->
+            binding.btnUnirseRuta.isEnabled = true
+            if (response.trim() == "success") {
+                usuarioEstaUnido = false
+                actualizarAspectoBoton()
+                Toast.makeText(requireContext(), "Has abandonado la ruta", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(requireContext(), "Error al abandonar", Toast.LENGTH_SHORT).show()
+            }
+        }, {
+            binding.btnUnirseRuta.isEnabled = true
+            Toast.makeText(requireContext(), "Error de conexión", Toast.LENGTH_SHORT).show()
+        }) {
+            override fun getParams(): Map<String, String> {
+                return mapOf(
+                    "id_ruta" to idRutaActual.toString(),
+                    "id_usuario" to idUsuarioActual.toString()
+                )
+            }
+        }
+        Volley.newRequestQueue(requireContext()).add(request)
     }
 
     override fun onMapReady(map: GoogleMap) {
         googleMap = map
         googleMap?.clear()
 
-        // LIMPIEZA EXTREMA: Quitamos espacios en blanco y comillas que puedan romper el código
         val mapaCodificado = arguments?.getString("mapa")?.trim()?.replace("\"", "") ?: ""
 
         if (mapaCodificado.isNotEmpty()) {
             try {
                 val puntos = PolyUtil.decode(mapaCodificado)
                 if (puntos.isNotEmpty()) {
-                    // Dibujamos con bordes redondeados para suavizar las uniones
                     googleMap?.addPolyline(PolylineOptions()
                         .addAll(puntos)
                         .color(Color.parseColor("#FF9800"))
@@ -92,7 +200,6 @@ class DetalleRutaFragment : Fragment(R.layout.fragment_detalle_ruta), OnMapReady
                         .startCap(RoundCap())
                         .endCap(RoundCap()))
 
-                    // Marcadores en los extremos reales del trazado
                     googleMap?.addMarker(MarkerOptions().position(puntos.first())
                         .icon(getCircularBitmapDescriptor(requireContext(), R.drawable.bandera_salida, TAMANO_ICONO))
                         .anchor(0.5f, 0.5f))
@@ -101,11 +208,9 @@ class DetalleRutaFragment : Fragment(R.layout.fragment_detalle_ruta), OnMapReady
                         .icon(getCircularBitmapDescriptor(requireContext(), R.drawable.bandera_llegada, TAMANO_ICONO))
                         .anchor(0.5f, 0.5f))
 
-                    // --- ZOOM DINÁMICO ---
                     val builder = LatLngBounds.Builder()
                     puntos.forEach { builder.include(it) }
 
-                    // Usamos el callback de carga para que el zoom sea perfecto
                     googleMap?.setOnMapLoadedCallback {
                         try {
                             googleMap?.animateCamera(CameraUpdateFactory.newLatLngBounds(builder.build(), 150))
@@ -115,20 +220,13 @@ class DetalleRutaFragment : Fragment(R.layout.fragment_detalle_ruta), OnMapReady
                     }
                 }
             } catch (e: Exception) {
-                // CHIVATO DE ERROR: Si entra aquí, el String llegó cortado desde el HomeFragment
                 android.util.Log.e("MAPA_DETALLE", "Error decodificando la Polyline: ${e.message}")
-                Toast.makeText(requireContext(), "Error visualizando el trazado completo", Toast.LENGTH_LONG).show()
-
-                // Fallback de emergencia
                 val lat = arguments?.getDouble("latitud") ?: 0.0
                 val lon = arguments?.getDouble("longitud") ?: 0.0
-
                 if (lat != 0.0 && lon != 0.0) {
                     googleMap?.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(lat, lon), 15f))
                 }
             }
-        } else {
-            Toast.makeText(requireContext(), "No se recibió información del trazado", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -147,9 +245,9 @@ class DetalleRutaFragment : Fragment(R.layout.fragment_detalle_ruta), OnMapReady
 
     private fun asignarColorDificultad(textView: TextView, dificultad: String) {
         val color = when (dificultad.lowercase().trim()) {
-            "baja" -> Color.parseColor("#4CAF50"); "media" -> Color.parseColor("#FFEB3B")
-            "alta" -> Color.parseColor("#FF9800"); "muy alta" -> Color.parseColor("#F44336")
-            "extrema" -> Color.parseColor("#4A148C"); else -> Color.GRAY
+            "baja" -> Color.parseColor("#4CAF50"); "media" -> Color.parseColor("#FFC107")
+            "alta" -> Color.parseColor("#F54040"); "muy alta" -> Color.parseColor("#961208")
+            "extrema" -> Color.parseColor("#490669"); else -> Color.GRAY
         }
         textView.setTextColor(color)
     }

@@ -2,8 +2,6 @@ package com.example.proyectofinciclo.ui
 
 import android.content.Context
 import android.os.Bundle
-import android.text.Editable
-import android.text.TextWatcher
 import android.view.View
 import android.widget.TextView
 import android.widget.Toast
@@ -41,66 +39,78 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         idRolActual = sharedPrefs.getInt("id_rol", 2)
         idUsuarioLogueadoActual = sharedPrefs.getInt("id_usuario", 0)
 
-        actualizarInterfazSegunRol()
-        setupBuscador()
+        activity?.findViewById<TextView>(R.id.tvModoAdmin)?.visibility =
+            if (idRolActual == 1) View.VISIBLE else View.GONE
+
+        adapter = RutaAdapter(listaOriginalRutas, idRolActual, idUsuarioLogueadoActual, { ruta ->
+            irADetalle(ruta)
+        }, { ruta ->
+            mostrarDialogoBorrar(ruta)
+        })
+
+        binding.rvRutasTablon.adapter = adapter
+
         obtenerRutasDeServidor()
     }
 
-    private fun actualizarInterfazSegunRol() {
-        val tvBanner = activity?.findViewById<TextView>(R.id.tvModoAdmin)
-        tvBanner?.visibility = if (idRolActual == 1) View.VISIBLE else View.GONE
-    }
-
-    private fun setupBuscador() {
-        binding.etFiltroLocalidad.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                filtrarRutas(s.toString().lowercase().trim())
-            }
-            override fun afterTextChanged(s: Editable?) {}
-        })
-    }
-
-    private fun filtrarRutas(texto: String) {
-        val listaFiltrada = if (texto.isEmpty()) listaOriginalRutas else listaOriginalRutas.filter { it.localidad.lowercase().contains(texto) }
-        if (::adapter.isInitialized) adapter.updateRutas(listaFiltrada)
+    override fun onResume() {
+        super.onResume()
+        // Refresca la lista automáticamente al volver a esta pestaña
+        obtenerRutasDeServidor()
     }
 
     private fun obtenerRutasDeServidor() {
         val url = "http://192.168.56.1/cycling_together_api/listar_rutas.php"
-        Volley.newRequestQueue(requireContext()).add(StringRequest(Request.Method.GET, url, { respuesta ->
+
+        val request = StringRequest(Request.Method.GET, url, { response ->
             try {
-                val jsonArray = JSONArray(respuesta)
+                val jsonArray = JSONArray(response)
                 listaOriginalRutas.clear()
+
                 for (i in 0 until jsonArray.length()) {
                     val obj = jsonArray.getJSONObject(i)
-                    listaOriginalRutas.add(Ruta(
-                        id_ruta = obj.getInt("id_ruta"),
-                        titulo = obj.getString("titulo"),
-                        distancia = obj.getDouble("distancia"),
-                        desnivel = obj.getInt("desnivel"),
-                        dificultad = obj.getString("dificultad"),
-                        localidad = obj.getString("localidad"),
-                        id_bici = obj.getInt("id_bici"),
-                        fecha = obj.getString("fecha"),
-                        hora = obj.getString("hora"),
-                        puntoEncuentro = obj.getString("punto_encuentro"),
-                        descripcion = obj.getString("descripcion"),
-                        id_creador = obj.getInt("id_creador"),
-                        nombre_creador = obj.optString("nombre_creador", "Usuario"),
-                        mapa_trazado = obj.optString("mapa_trazado", ""),
-                        latitud = obj.optDouble("latitud", 0.0),
-                        longitud = obj.optDouble("longitud", 0.0)
-                    ))
+                    val listaIds = obj.optString("lista_ids_participantes", "")
+                    val usuarioUnido = listaIds.split(",").contains(idUsuarioLogueadoActual.toString())
+
+                    listaOriginalRutas.add(
+                        Ruta(
+                            id_ruta = obj.optInt("id_ruta"),
+                            id_creador = obj.optInt("id_creador"),
+                            titulo = obj.optString("titulo"),
+                            localidad = obj.optString("localidad"),
+                            distancia = obj.optDouble("distancia"),
+                            desnivel = obj.optInt("desnivel"),
+                            dificultad = obj.optString("dificultad"),
+                            id_bici = obj.optInt("id_bici"),
+                            fecha = obj.optString("fecha"),
+                            hora = obj.optString("hora"),
+                            puntoEncuentro = obj.optString("punto_encuentro"),
+                            descripcion = obj.optString("descripcion"),
+                            mapa_trazado = obj.optString("mapa_trazado"),
+                            nombre_creador = obj.optString("nombre_creador"),
+                            latitud = obj.optDouble("latitud", 0.0),
+                            longitud = obj.optDouble("longitud", 0.0),
+                            num_participantes = obj.optInt("num_participantes", 0),
+                            nombres_participantes = obj.optString("nombres_participantes", ""),
+                            estaUnido = usuarioUnido
+                        )
+                    )
                 }
-                adapter = RutaAdapter(listaOriginalRutas, idRolActual, idUsuarioLogueadoActual, { irADetalle(it) }, { mostrarDialogoBorrar(it) })
-                binding.rvRutasTablon.adapter = adapter
-            } catch (e: Exception) { e.printStackTrace() }
-        }, { Toast.makeText(requireContext(), "Error de red", Toast.LENGTH_SHORT).show() }))
+                adapter.updateRutas(listaOriginalRutas)
+            } catch (e: Exception) {
+                listaOriginalRutas.clear()
+                adapter.updateRutas(listaOriginalRutas)
+            }
+        }, {
+            Toast.makeText(requireContext(), "Error de red", Toast.LENGTH_SHORT).show()
+        })
+
+        Volley.newRequestQueue(requireContext()).add(request)
     }
 
     private fun irADetalle(ruta: Ruta) {
         val bundle = Bundle().apply {
+            putInt("id_ruta", ruta.id_ruta ?: 0)
             putString("titulo", ruta.titulo)
             putDouble("distancia", ruta.distancia)
             putString("dificultad", ruta.dificultad)
@@ -115,20 +125,45 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             putString("creador", ruta.nombre_creador)
             putDouble("latitud", ruta.latitud)
             putDouble("longitud", ruta.longitud)
-            putString("mapa", ruta.mapa_trazado) // CLAVE CORRECTA
+            putString("mapa", ruta.mapa_trazado)
+            putInt("num_participantes", ruta.num_participantes)
+            putString("nombres_participantes", ruta.nombres_participantes)
+            putBoolean("estaUnido", ruta.estaUnido)
         }
         findNavController().navigate(R.id.detalleRutaFragment, bundle)
     }
 
     private fun mostrarDialogoBorrar(ruta: Ruta) {
-        AlertDialog.Builder(requireContext()).setTitle("Eliminar").setMessage("¿Borrar ruta?")
-            .setPositiveButton("Sí") { _, _ -> ejecutarBorrado(ruta.id_ruta!!) }.setNegativeButton("No", null).show()
+        AlertDialog.Builder(requireContext())
+            .setTitle("Eliminar ruta")
+            .setMessage("¿Estás seguro de que deseas eliminar esta ruta?")
+            .setPositiveButton("Sí") { _, _ -> ejecutarBorrado(ruta.id_ruta!!) }
+            .setNegativeButton("No", null)
+            .show()
     }
 
     private fun ejecutarBorrado(id: Int) {
         val url = "http://192.168.56.1/cycling_together_api/borrar_rutas.php"
-        Volley.newRequestQueue(requireContext()).add(object : StringRequest(Method.POST, url, { obtenerRutasDeServidor() }, {}) {
-            override fun getParams() = mapOf("id_ruta" to id.toString())
-        })
+
+        val request = object : StringRequest(Method.POST, url, { response ->
+            try {
+                val jsonObject = JSONObject(response)
+                if (jsonObject.getString("status") == "success") {
+                    Toast.makeText(requireContext(), "Ruta eliminada correctamente", Toast.LENGTH_SHORT).show()
+                    obtenerRutasDeServidor()
+                } else {
+                    Toast.makeText(requireContext(), "Error al eliminar la ruta", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                Toast.makeText(requireContext(), "Error en el servidor", Toast.LENGTH_SHORT).show()
+            }
+        }, {
+            Toast.makeText(requireContext(), "Error de red", Toast.LENGTH_SHORT).show()
+        }) {
+            override fun getParams(): Map<String, String> {
+                return mapOf("id_ruta" to id.toString())
+            }
+        }
+        Volley.newRequestQueue(requireContext()).add(request)
     }
 }

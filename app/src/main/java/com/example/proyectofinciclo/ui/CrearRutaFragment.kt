@@ -34,13 +34,9 @@ class CrearRutaFragment : Fragment(R.layout.fragment_crear_ruta), OnMapReadyCall
     private val COLOR_TIERRA = Color.parseColor("#8B4513")
     private val TAMANO_ICONO_CIRCULAR = 80
     private val TAMANO_FLECHA = 40
-
     private val puntosRuta = mutableListOf<LatLng>()
     private val tramosPolyline = mutableListOf<Polyline>()
-
-    // LISTA MAESTRA DE PUNTOS REALES PARA EVITAR TRAZADOS ENREVESADOS
     private val puntosTrazadoCompleto = mutableListOf<LatLng>()
-
     private val distanciasTramos = mutableListOf<Double>()
     private val desnivelesTramos = mutableListOf<Double>()
     private val marcadoresKm = mutableListOf<Marker>()
@@ -49,7 +45,6 @@ class CrearRutaFragment : Fragment(R.layout.fragment_crear_ruta), OnMapReadyCall
     private var marcadorFin: Marker? = null
     private var distanciaTotalAcumulada = 0.0
     private var desnivelTotalAcumulado = 0.0
-
     private val opcionesBici = mapOf("Carretera" to 1, "MTB" to 2, "Gravel" to 3, "E-Bike" to 4)
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -91,25 +86,17 @@ class CrearRutaFragment : Fragment(R.layout.fragment_crear_ruta), OnMapReadyCall
                 val route = json.getJSONArray("routes").getJSONObject(0)
                 val leg = route.getJSONArray("legs").getJSONObject(0)
                 val km = leg.getJSONObject("distance").getDouble("value") / 1000.0
-                distanciasTramos.add(km); distanciaTotalAcumulada += km
-
                 val polylineTramo = route.getJSONObject("overview_polyline").getString("points")
                 val puntosDecodificados = PolyUtil.decode(polylineTramo)
-
-                // Añadimos a la lista maestra para persistencia limpia
-                puntosTrazadoCompleto.addAll(puntosDecodificados)
-
                 val color = if (binding.autoCompleteTipo.text.toString() in listOf("MTB", "Gravel")) COLOR_TIERRA else COLOR_ASFALTO
-
+                distanciasTramos.add(km); distanciaTotalAcumulada += km
+                puntosTrazadoCompleto.addAll(puntosDecodificados)
                 tramosPolyline.add(googleMap.addPolyline(PolylineOptions().addAll(puntosDecodificados).color(color).width(14f).jointType(JointType.ROUND)))
 
                 recalcularHitosKilometricos()
                 dibujarFlechasDireccion()
                 actualizarMarcadoresExtremos()
-
-                // LLAMADA CORREGIDA PARA DESNIVEL
                 obtenerDesnivelAlgoritmoFiltro(puntosDecodificados)
-
                 binding.etCrearDistancia.setText(String.format("%.2f", distanciaTotalAcumulada))
             }
         }, {}))
@@ -151,8 +138,6 @@ class CrearRutaFragment : Fragment(R.layout.fragment_crear_ruta), OnMapReadyCall
                 tramosPolyline.removeAt(tramosPolyline.size - 1).remove()
                 distanciasTramos.removeAt(distanciasTramos.size - 1)
                 if (desnivelesTramos.isNotEmpty()) desnivelTotalAcumulado -= desnivelesTramos.removeAt(desnivelesTramos.size - 1)
-
-                // REGENERAR PUNTOS REALES TRAS DESHACER
                 puntosTrazadoCompleto.clear()
                 tramosPolyline.forEach { puntosTrazadoCompleto.addAll(it.points) }
 
@@ -176,7 +161,7 @@ class CrearRutaFragment : Fragment(R.layout.fragment_crear_ruta), OnMapReadyCall
             Toast.makeText(requireContext(), "Faltan datos", Toast.LENGTH_SHORT).show(); return
         }
 
-        // GENERAR POLYLINE ÚNICA Y LIMPIA
+        // Generamos una polyline del recorrido
         val puntosSimplificados = PolyUtil.simplify(puntosTrazadoCompleto, 5.0)
         val polylineFinal = PolyUtil.encode(puntosSimplificados)
 
@@ -210,7 +195,7 @@ class CrearRutaFragment : Fragment(R.layout.fragment_crear_ruta), OnMapReadyCall
         Volley.newRequestQueue(requireContext()).add(request)
     }
 
-    // --- MÉTODOS VISUALES RESTANTES (Banderas, Flechas, Hitos) ---
+    // Actualización de los marcadores de inicio y fin
     private fun actualizarMarcadoresExtremos() {
         marcadorInicio?.remove(); marcadorFin?.remove()
         if (puntosRuta.isEmpty()) return
