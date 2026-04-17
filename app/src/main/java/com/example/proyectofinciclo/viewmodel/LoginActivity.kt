@@ -83,6 +83,8 @@ class LoginActivity : AppCompatActivity() {
                     nuevoEscritor.putInt("id_usuario", idUsuario)
                     nuevoEscritor.putString("nombre_usuario", nombre)
 
+
+
                     // Recordamos usuario si está chequeado
                     if (binding.cbRecordar.isChecked) {
                         nuevoEscritor.putString(LLAVE_CORREO, email)

@@ -1,6 +1,6 @@
 package com.example.proyectofinciclo
 
-import android.content.Context // Añade esta importación
+import android.content.Context
 import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
@@ -21,32 +21,30 @@ class MainActivity : AppCompatActivity() {
         val navController = navHostFragment.navController
         binding.bottomNavigation.setupWithNavController(navController)
 
-        // Usamos el sharedPrefferences creado en el login para saber si es admin o no
-        val prefs = getSharedPreferences("preferences", Context.MODE_PRIVATE)
-        val idRol = prefs.getInt("id_rol", 2)
-
-        // Si es admin, mostramos el banner nada más abrir la actividad
-        if (idRol == 1) {
-            binding.tvModoAdmin.visibility = View.VISIBLE
-        } else {
-            binding.tvModoAdmin.visibility = View.GONE
-        }
-
         navController.addOnDestinationChangedListener { _, destination, _ ->
-            // Controlamos el menú inferior
+            val prefs = getSharedPreferences("preferences", Context.MODE_PRIVATE)
+            val idRol = prefs.getInt("id_rol", 2)
+
+            // Controlamos qué se muestra dependiendo de la ventana
             if (destination.id == R.id.registroFragment || destination.id == R.id.loginFragment) {
+                //En caso de cerrar la app sin cerrar sesión, limpiamos el sharedPreferences
+                prefs.edit().clear().apply()
+                // En Login o Registro, la pantalla debe estar limpia
                 binding.bottomNavigation.visibility = View.GONE
-                // Ocultamos el banner del login y el registro
                 binding.tvModoAdmin.visibility = View.GONE
             } else {
                 binding.bottomNavigation.visibility = View.VISIBLE
-                // Al navegar por el Home/Perfil, si es administrador, mantenemos el banner
+
+                // Mostramos el banner sólo en caso de que el id_rol sea 1 (Administrador)
                 if (idRol == 1) {
                     binding.tvModoAdmin.visibility = View.VISIBLE
+                } else {
+                    binding.tvModoAdmin.visibility = View.GONE
                 }
             }
         }
 
+        // Si venimos impulsados por un Intent explícito al registro
         if (intent.getBooleanExtra("VengoDelLogin", false)) {
             navController.navigate(R.id.registroFragment)
         }

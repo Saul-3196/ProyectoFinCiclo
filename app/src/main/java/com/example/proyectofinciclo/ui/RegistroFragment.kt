@@ -64,10 +64,10 @@ class RegistroFragment : Fragment(R.layout.fragment_registro) {
                         editor.putInt("id_rol", 2)
                         editor.apply()
 
-                        Toast.makeText(requireContext(), "Usuario registrado con éxito", Toast.LENGTH_LONG).show()
+                        Toast.makeText(requireContext(), "Usuario registrado con éxito, inicia sesión", Toast.LENGTH_LONG).show()
 
                         // Volvemos al Login con la memoria limpia
-                        findNavController().popBackStack()
+                        findNavController().navigate(R.id.loginFragment)
                     } else {
                         Toast.makeText(requireContext(), jsonRespuesta.getString("message"), Toast.LENGTH_LONG).show()
                     }
