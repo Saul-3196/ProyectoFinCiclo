@@ -159,6 +159,13 @@ class PerfilFragment : Fragment(R.layout.fragment_perfil) {
                     binding.spinnerSexo.setText(sexo, false)
                 }
 
+                val ciudad = userJson.optString("ciudad")
+                if(ciudad != "null" && ciudad.isNotEmpty()){
+                    binding.etCiudad.setText(ciudad)
+                }else{
+                    binding.etCiudad.setText("")
+                }
+
                 val nivel = userJson.optString("nivel_usuario")
                 if(nivel != "null") binding.spinnerNivel.setText(nivel, false)
 

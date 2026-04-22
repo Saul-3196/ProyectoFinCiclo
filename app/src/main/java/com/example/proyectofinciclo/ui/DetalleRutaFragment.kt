@@ -68,7 +68,7 @@ class DetalleRutaFragment : Fragment(R.layout.fragment_detalle_ruta), OnMapReady
         val idCreadorRuta = arguments?.getInt("id_creador") ?: 0
         val nombreOrganizador = arguments?.getString("creador") ?: "Usuario"
         val textoBici = when(idBici){ 1 -> "Carretera"; 2 -> "MTB"; 3 -> "Gravel"; 4 -> "E-Bike"; else -> "Bici" }
-        val esVigente = comprobarFecha(fechaString)
+        val esVigente = comprobarFecha(fechaString, hora)
 
         binding.apply {
             tvDetalleTitulo.text = titulo
@@ -257,12 +257,16 @@ class DetalleRutaFragment : Fragment(R.layout.fragment_detalle_ruta), OnMapReady
         activity?.findViewById<TextView>(R.id.tvModoAdmin)?.visibility = if (idRol == 1) View.VISIBLE else View.GONE
     }
 
-    private fun comprobarFecha(fechaRuta: String): Boolean {
+    private fun comprobarFecha(fechaRuta: String, horaRuta: String): Boolean {
         return try {
-            val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-            val dateRuta = sdf.parse(fechaRuta)
-            val hoy = Calendar.getInstance().apply { set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0) }.time
-            dateRuta != null && !dateRuta.before(hoy)
-        } catch (e: Exception) { true }
+            val fecha = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+            val fechaYHora = "$fechaRuta $horaRuta"
+            val dateRuta = fecha.parse(fechaYHora)
+            val ahora = Date()
+            dateRuta != null && !dateRuta.before(ahora)
+
+        } catch (e: Exception) {
+            false
+        }
     }
 }

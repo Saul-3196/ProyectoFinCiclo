@@ -41,6 +41,10 @@
         <action
             android:id="@+id/action_homeFragment_to_crearRutaFragment"
             app:destination="@id/crearRutaFragment" />
+        <action
+            android:id="@+id/action_homeFragment_to_perfilFragment"
+            app:destination="@id/perfilFragment" />
+
     </fragment>
 
     <fragment
