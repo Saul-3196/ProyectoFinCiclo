@@ -2,6 +2,8 @@ package com.example.proyectofinciclo.ui
 
 import android.content.Context
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.View
 import android.widget.TextView
 import android.widget.Toast
@@ -18,6 +20,7 @@ import com.example.proyectofinciclo.databinding.FragmentHomeBinding
 import com.example.proyectofinciclo.model.Ruta
 import org.json.JSONArray
 import org.json.JSONObject
+import java.util.Locale
 
 class HomeFragment : Fragment(R.layout.fragment_home) {
 
@@ -49,6 +52,15 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         })
 
         binding.rvRutasTablon.adapter = adapter
+
+        // Escuchador para el filtro de búsqueda por Localidad
+        binding.etFiltroLocalidad.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                filtrarRutas(s.toString())
+            }
+        })
 
         obtenerRutasDeServidor()
     }
@@ -166,4 +178,14 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         }
         Volley.newRequestQueue(requireContext()).add(request)
     }
+
+    // Función para filtrar las rutas
+    private fun filtrarRutas(texto: String) {
+        val textoBusqueda = texto.lowercase(Locale.getDefault())
+        val listaFiltrada = listaOriginalRutas.filter { ruta ->
+            ruta.localidad.lowercase(Locale.getDefault()).contains(textoBusqueda)
+        }
+        adapter.updateRutas(listaFiltrada)
+    }
+
 }
