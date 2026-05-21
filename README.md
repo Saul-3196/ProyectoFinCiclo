@@ -8,6 +8,7 @@ El proyecto está organizado de froma limpia y modular:
 
 1. App con el código fuente de la aplicación de Android.
 2. cycling_together_api: Contiene el backend del ecosistema. Una API REST construida en PHP que centraliza la lógica de negocio y conecta la interfaz móvil con la base de datos.
+3. Panel de Administración de escriotorio: Contiene las vistas del panel y su código backend. Este Panel permite a los usuarios moderadores ejercer un control total sobre la aplicación.
 
 🚴‍♂️CARACTERÍSTICAS DE LA APLICACIÓN
 🔐 Autenticación de Usuarios: Registro e inicio de sesión seguro para los ciclistas.
