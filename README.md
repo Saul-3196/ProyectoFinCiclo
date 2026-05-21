@@ -2,7 +2,12 @@ Cycling Together 🚲 - You'll never Ride Alone.
 ¡Bienvenido a Cycling Together! Este proyecto es un ecosistema tecnológico completo diseñado para conectar a la comunidad ciclista local. Nace de una necesidad real en el deporte: ayudar a los ciclistas a encontrar compañeros de su mismo nivel o modalidad, y eliminar el miedo a explorar rutas desconocidas en solitario.
 Este ecosistema constituye mi trabajo de fin de ciclo para el Grado Superior de Desarrollo Multiplataforma.
 
-Este repositorio contiene el código fuente de la aplicación móvil de la aplicación para móvil de Android.
+📂ESTRUCTURA DEL REPOSITORIO
+
+El proyecto está organizado de froma limpia y modular:
+
+1. App con el código fuente de la aplicación de Android.
+2. cycling_together_api: Contiene el backend del ecosistema. Una API REST construida en PHP que centraliza la lógica de negocio y conecta la interfaz móvil con la base de datos.
 
 🚴‍♂️CARACTERÍSTICAS DE LA APLICACIÓN
 🔐 Autenticación de Usuarios: Registro e inicio de sesión seguro para los ciclistas.
@@ -12,10 +17,10 @@ Este repositorio contiene el código fuente de la aplicación móvil de la aplic
 ⚙️ Perfil Personalizado: Configuración del perfil de usuario indicando la modalidad principal (Carretera, MTB, Gravel, E-Bike) y otros campos.
 
 ⚒️TECNOLOGÍAS EMPLEADAS
-Lenguaje: Kotlin (Desarrollo nativo en Android Studio).
-Arquitectura de Navegación: *Navigation Component* para garantizar un flujo suave basado en una única actividad (*Single Activity Architecture*).
-Volley para la gestión asíncrona de peticiones HTTP y consumo de datos en formato JSON.
-Google Maps SDK para Android.
+1. Lenguaje: Kotlin (Desarrollo nativo en Android Studio).
+2. Arquitectura de Navegación: *Navigation Component* para garantizar un flujo suave basado en una única actividad (*Single Activity Architecture*).
+3. Volley para la gestión asíncrona de peticiones HTTP y consumo de datos en formato JSON.
+4. Google Maps SDK para Android.
 
 📐 Arquitectura General del Ecosistema
 
@@ -25,8 +30,8 @@ Aunque este repositorio aloja el cliente móvil, la aplicación está integrada 
 2. Backend (API REST): Desarrollado en PHP, encargado de recibir los parámetros de la app, procesar la lógica de negocio y comunicarse con el almacenamiento.
 3. Base de Datos: Estructura relacional en MySQL que asegura la persistencia de usuarios, rutas, roles y el control de participantes mediante restricciones de clave foránea.
 
- 🔧 Retos Técnicos Superados en Android
+🔧 Retos Técnicos Superados en Android
 
-* Trazado Eficiente de Rutas: Integración de *Polylines* para decodificar cadenas alfanuméricas provenientes del servidor y dibujar los recorridos en el mapa sin penalizar el rendimiento del dispositivo.
-* Gestión del Ciclo de Vida y Sesiones: Control estricto de la pila de actividades y uso de *SharedPreferences* para evitar "sesiones fantasma" o retornos no deseados a pantallas de login tras la autenticación.
-* Control de Concurrencia en la UI: Desactivación temporal de componentes interactivos (como botones de acción) durante el envío de peticiones para prevenir llamadas duplicadas a la API mientras se aguarda la respuesta del servidor.
+1. Trazado Eficiente de Rutas: Integración de *Polylines* para decodificar cadenas alfanuméricas provenientes del servidor y dibujar los recorridos en el mapa sin penalizar el rendimiento del dispositivo.
+2. Gestión del Ciclo de Vida y Sesiones: Control estricto de la pila de actividades y uso de *SharedPreferences* para evitar "sesiones fantasma" o retornos no deseados a pantallas de login tras la autenticación.
+3. Control de Concurrencia en la UI: Desactivación temporal de componentes interactivos (como botones de acción) durante el envío de peticiones para prevenir llamadas duplicadas a la API mientras se aguarda la respuesta del servidor.
